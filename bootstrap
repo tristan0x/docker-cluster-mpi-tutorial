@@ -4,6 +4,15 @@ SED=${SED:-sed}
 DOCKER=${DOCKER:-docker}
 SSH_KEYGEN=${SSH_KEYGEN:-ssh-keygen}
 
+log() {
+    echo '#' $@
+}
+
+cmd() {
+    echo '$' $@
+    $@
+}
+
 help_message() {
     local bold=$(tput bold) normal=$(tput sgr0)
     cat <<EOF
@@ -49,27 +58,27 @@ parse_cli() {
 
 generate_ssh_key() {
     if ! [ -f base-image/files/id_rsa ] ; then
-        "$SSH_KEYGEN" -t rsa -N '' -f base-image/files/id_rsa
+        cmd "$SSH_KEYGEN" -t rsa -N '' -f base-image/files/id_rsa
     fi
-    chmod 400 base-image/files/id_rsa
-    chmod 400 base-image/files/id_rsa.pub
+    cmd chmod 400 base-image/files/id_rsa
+    cmd chmod 400 base-image/files/id_rsa.pub
 }
 
 download_platform_mpi() {
     PLATFORM_MPI_BIN=platform_mpi-09.01.04.03r-ce.bin
     PLATFORM_MPI_DOWNLOAD="https://www14.software.ibm.com/sdfdl/v2/regic/stgepm/fromibm/conf/ibmpmce/Xa.2/Xb.aWO8rUFWgTdbUXN5gKFlxFqJBvABCBKoZVZNLCorKlA/Xc.platform_mpi-09.01.04.03r-ce.bin/Xd./Xf.LPr.F1az/Xg.9204939/Xi.swg-ibmpmce/XY.regsrvs/XZ.d0PstIAclMb06sh1Daldud_jHwI/$PLATFORM_MPI_BIN"
     if ! [ -f "base-image/files/$PLATFORM_MPI_BIN" ] ;then
-        echo "Downloading IBM Platform MPI Community Edition"
-        (cd base-image/files ; wget "$PLATFORM_MPI_DOWNLOAD")
+        log "Downloading IBM Platform MPI Community Edition"
+        (cd base-image/files ; cmd wget "$PLATFORM_MPI_DOWNLOAD")
     else 
-        echo "IBM Platform MPI Community Edition already downloaded. Nothing to do."
+        log "IBM Platform MPI Community Edition already downloaded. Nothing to do."
     fi
     chmod +x "base-image/files/$PLATFORM_MPI_BIN"
 }
 
 build_docker_image() {
-    echo "Building base Docker image"
-    (cd base-image ; "$DOCKER" build -t centos7:mpi .)
+    log "Building base Docker image"
+    cmd "$DOCKER" build -t centos7:mpi base-image
 }
 
 SSH_KEY=~/.ssh/id_rsa

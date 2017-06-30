@@ -27,13 +27,23 @@ used to execute job on this cluster.
 For instance:
 
 ```
-$ ./cluster-setup 4
-Starting 4 containers:
-6efed4edd8b7030385e76293a37ef757338506581fb1ad5590545923809f0c6e
-3f86426eb440851746616339daaeb352f905300d68372978cc8b697054611d58
-4c587d97146af54ac7f44280e1c4f114ef9f656c732a4974fb071fbd8725833a
-e6c71cd05052800f3867a4946fe09d4f729a717b76148676c992130d6eb70577
-$ docker ps
+bash $ ./cluster-setup 4
+# Starting cluster of 4 containers:
+$ docker run -P -d -h node01 --name docker-mpi-01 centos7:mpi /usr/sbin/sshd -D
+248774f7536a7e42059196fe526f6c33e536114abce27b6063da6e6250db0a0f
+$ sleep 1
+$ docker run -P -d -h node02 --name docker-mpi-02 centos7:mpi /usr/sbin/sshd -D
+7a743872efcabd2dc29939191966ad3c0cb16d855af6da6e3c857b7305455c20
+$ sleep 1
+$ docker run -P -d -h node03 --name docker-mpi-03 centos7:mpi /usr/sbin/sshd -D
+a0eae9492540f17d58273f2191356b2d8735f8e603963b5b1866cf71f7ddfb63
+$ sleep 1
+$ docker run -P -d -h node04 --name docker-mpi-04 centos7:mpi /usr/sbin/sshd -D
+70747e640327a6349dffca85b954ac473d620296f3920113d4444e88f6f77c41
+$ sleep 1
+# Generating script: cluster-mpirun
+# Generating script: cluster-teardown
+bash $ docker ps
 CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS                    NAMES
 e6c71cd05052        centos7:mpi         "/usr/sbin/sshd -D"      About a minute ago   Up About a minute   0.0.0.0:32777->22/tcp    cont04
 4c587d97146a        centos7:mpi         "/usr/sbin/sshd -D"      About a minute ago   Up About a minute   0.0.0.0:32776->22/tcp    cont03

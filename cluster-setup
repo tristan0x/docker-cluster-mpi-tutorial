@@ -2,12 +2,21 @@
 
 DOCKER=${DOCKER:-docker}
 
+log() {
+    echo '#' $@
+}
+
+cmd() {
+    echo '$' $@
+    $@
+}
+
 setup_cluster() {
     local count="$1" base_image="$2" container_prefix="$3" nodes=""
-    echo "Starting cluster of $count containers:"
+    log "Starting cluster of $count containers:"
     for id in `seq -f "%02g" $count`; do
-        "$DOCKER" run -P -d -h node$id --name ${container_prefix}${id} $base_image /usr/sbin/sshd -D
-        sleep 1
+        cmd "$DOCKER" run -P -d -h node$id --name ${container_prefix}${id} $base_image /usr/sbin/sshd -D
+        cmd sleep 1
         ipaddress=`"$DOCKER" inspect -f "{{ .NetworkSettings.IPAddress }}" ${container_prefix}${id}`
         if [ "x$nodes" = x ] ;then
             nodes=$ipaddress
@@ -16,11 +25,16 @@ setup_cluster() {
         fi
     done
 
-    echo "Generating script: cluster-mpirun"
+    echo "# Generating script: cluster-mpirun"
     cat <<EOF > cluster-mpirun
 #!/bin/sh -e
 
-exec "$DOCKER" run --rm -ti \\
+cmd() {
+    echo '$' \$@
+    \$@
+}
+
+cmd exec "$DOCKER" run --rm -ti \\
   --entrypoint /usr/bin/mpirun.entrypoint \\
   --env MPIRUN_NP=$count \\
   --env MPIRUN_HOSTLIST="$nodes" \\
@@ -29,9 +43,10 @@ exec "$DOCKER" run --rm -ti \\
 EOF
     chmod +x cluster-mpirun
 
-    echo "Generating script: cluster-teardown"
+    echo "# Generating script: cluster-teardown"
     echo "#!/bin/sh" > cluster-teardown
     for id in `seq -f "%02g" $count` ; do
+        echo "echo '$' $DOCKER rm -f ${container_prefix}${id}" >> cluster-teardown
         echo "$DOCKER rm -f ${container_prefix}${id}" >> cluster-teardown
     done
     chmod +x cluster-teardown
