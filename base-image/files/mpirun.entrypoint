@@ -1,0 +1,3 @@
+#!/bin/sh -e
+
+exec "$MPI_ROOT/bin/mpirun" -np "$MPIRUN_NP" -hostlist "$MPIRUN_HOSTLIST" $@

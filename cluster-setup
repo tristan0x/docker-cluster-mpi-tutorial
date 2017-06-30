@@ -1,0 +1,92 @@
+#!/bin/sh -e
+
+SED=${SED:-sed}
+DOCKER=${DOCKER:-docker}
+
+setup_cluster() {
+    local count="$1" base_image="$2" container_prefix="$3" nodes=""
+    echo "Starting cluster of $count containers:"
+    for id in `seq -f "%02g" $count`; do
+        "$DOCKER" run -P -d -h node$id --name ${container_prefix}${id} $base_image /usr/sbin/sshd -D
+        sleep 1
+        ipaddress=`"$DOCKER" inspect -f "{{ .NetworkSettings.IPAddress }}" ${container_prefix}${id}`
+        if [ "x$nodes" = x ] ;then
+            nodes=$ipaddress
+        else
+            nodes="${nodes},$ipaddress"
+        fi
+    done
+
+    echo "Generating script: cluster-mpirun"
+    cat <<EOF > cluster-mpirun
+#!/bin/sh -e
+
+exec "$DOCKER" run --rm -ti \\
+  --entrypoint /usr/bin/mpirun.entrypoint \\
+  --env MPIRUN_NP=$count \\
+  --env MPIRUN_HOSTLIST="$nodes" \\
+  $base_image \\
+  \$@
+EOF
+    chmod +x cluster-mpirun
+
+    echo "Generating script: cluster-teardown"
+    echo "#!/bin/sh" > cluster-teardown
+    for id in `seq -f "%02g" $count` ; do
+        echo "$DOCKER rm -f ${container_prefix}${id}" >> cluster-teardown
+    done
+    chmod +x cluster-teardown
+}
+
+COUNT="$1"
+BASE_IMAGE="centos7:mpi"
+CONTAINER_PREFIX=docker-mpi-
+
+parse_cli() {
+    while [ "x$1" != x ] ; do
+        case "$1" in
+            -h|--help)
+                help_message
+                exit 0
+                ;;
+            --base-image)
+                shift
+                BASE_IMAGE="$1"
+                ;;
+            --container-prefix)
+                shift
+                CONTAINER_PREFIX="$1"
+                ;;
+            *)
+                COUNT="$1"
+        esac
+        shift
+    done
+}
+
+help_message() {
+    local bold=$(tput bold) normal=$(tput sgr0)
+    cat <<EOF
+${bold}NAME${normal}
+        cluster-setup - Start cluster of Docker containers
+
+${bold}SYNOPSYS${normal}
+        ${bold}cluster-setup${normal} [OPTIONS] NODES
+
+${bold}DESCRIPTION${normal}
+        Start a cluster of NODES Docker containers.
+
+        ${bold}--base-image${normal}
+            the default base Docker image to use to spawn containers.
+            Default is "${BASE_IMAGE}", the one built by ${bold}bootstrap${normal} script.
+
+        ${bold}--container-prefix${normal}
+            Docker containers name prefix. Default is "${CONTAINER_PREFIX}"
+
+        ${bold}-h --help${normal}
+                Display this message and exit.
+EOF
+}
+
+parse_cli $@
+setup_cluster "$COUNT" "$BASE_IMAGE" "$CONTAINER_PREFIX"

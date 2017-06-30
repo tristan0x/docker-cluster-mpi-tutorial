@@ -1,0 +1,87 @@
+#!/bin/sh -e
+
+SED=${SED:-sed}
+DOCKER=${DOCKER:-docker}
+
+help_message() {
+	local bold=$(tput bold) normal=$(tput sgr0)
+	cat <<EOF
+${bold}NAME${normal}
+        bootstrap - install requirements for this tutorial
+
+${bold}SYNOPSYS${normal}
+        ${bold}bootstrap${normal} [OPTIONS]
+
+${bold}DESCRIPTION${normal}
+        This script installs the files in ${bold}base-image/files${normal} directory
+        required by the ${bold}base-image/Dockerfile${normal} recipe:
+
+        1. A SSH key, without passphrase, so that the different containers can 
+           interact together. Default SSH key is ~/.ssh/id_rsa
+        2. Download IBM Platform MPI Community Edition installer
+        3. Build the base Docker image used by this tutorial
+
+        ${bold}--ssh-key${normal} FILE
+                Specify the SSH key to use. Default is ~/.ssh/id_rsa
+                The specified SSH key must not have a passphrase.
+
+        ${bold}-h --help${normal}
+                Display this message and exit.
+EOF
+}
+
+parse_cli() {
+	while [ "x$1" != x ] ; do
+		case "$1" in
+			-h|--help)
+				help_message
+				exit 0
+				;;
+			--ssh-key)
+				shift
+				SSH_KEY="$1"
+				;;
+		esac
+		shift
+	done
+}
+
+prepare_ssh_key() {
+	local ssh_key="$1"
+	if "$SED" -n '2p' "$ssh_key" | grep -q "^Proc-Type.*ENCRYPTED" ;then
+		echo "Error: specified SSH key ($ssh_key) has a passphrase." >&2
+		echo "Please use --ssh-key option to provide one without passphrase." >&2
+		echo "Hint: to create one: ssh-keygen -t rsa -N '' -f ~/.ssh/docker-mpi" >&2
+		return 1
+	fi
+	echo "Copying SSH key in ./base-image/files/ $ssh_key"
+	install -m 400 "$ssh_key" base-image/files/id_rsa
+	install -m 400 "${ssh_key}.pub" base-image/files/id_rsa.pub
+}
+
+download_platform_mpi() {
+	PLATFORM_MPI_BIN=platform_mpi-09.01.04.03r-ce.bin
+	PLATFORM_MPI_DOWNLOAD="https://www14.software.ibm.com/sdfdl/v2/regic/stgepm/fromibm/conf/ibmpmce/Xa.2/Xb.aWO8rUFWgTdbUXN5gKFlxFqJBvABCBKoZVZNLCorKlA/Xc.platform_mpi-09.01.04.03r-ce.bin/Xd./Xf.LPr.F1az/Xg.9204939/Xi.swg-ibmpmce/XY.regsrvs/XZ.d0PstIAclMb06sh1Daldud_jHwI/$PLATFORM_MPI_BIN"
+	if ! [ -f "base-image/files/$PLATFORM_MPI_BIN" ] ;then
+		echo "Downloading IBM Platform MPI Community Edition"
+		(cd base-image/files ; wget "$PLATFORM_MPI_DOWNLOAD")
+	else 
+		echo "IBM Platform MPI Community Edition already downloaded. Nothing to do."
+	fi
+	chmod +x "base-image/files/$PLATFORM_MPI_BIN"
+}
+
+build_docker_image() {
+	echo "Building base Docker image"
+	(cd base-image ; docker build -t centos7:mpi .)
+}
+
+SSH_KEY=~/.ssh/id_rsa
+
+parse_cli $@
+download_platform_mpi
+if ! prepare_ssh_key "$SSH_KEY" ; then
+	echo "Abort."
+	exit 1
+fi
+build_docker_image
