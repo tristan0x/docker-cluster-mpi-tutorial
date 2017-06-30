@@ -7,22 +7,14 @@ of Docker containers on your computer and execute an MPI job on it.
 
 * docker
 * wget
+* openssh-client (ssh-keygen executable is used)
 
 ## Installation
 
-### Bootstrap the working copy 
+### Prepare the working copy
 
 Execute the bootstrap script: `./bootstrap`
 
-You need to provide an SSH key without passphrase, used by the containers to communicate.
-By default the SSH key picked up by the script is ~/.ssh/id_rsa,
-but you can provide an alternative key with `--ssh-key` option.
-
-To build a new key without passphrase, use the command below:
-
-```
-ssh-keygen -t rsa -N '' -f ~/.ssh/docker-mpi
-```
 
 ### Spawn the containers
 

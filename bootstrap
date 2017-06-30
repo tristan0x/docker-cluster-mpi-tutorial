@@ -2,6 +2,7 @@
 
 SED=${SED:-sed}
 DOCKER=${DOCKER:-docker}
+SSH_KEYGEN=${SSH_KEYGEN:-ssh-keygen}
 
 help_message() {
     local bold=$(tput bold) normal=$(tput sgr0)
@@ -16,23 +17,21 @@ ${bold}DESCRIPTION${normal}
         This script installs the files in ${bold}base-image/files${normal} directory
         required by the ${bold}base-image/Dockerfile${normal} recipe:
 
-        1. A SSH key, without passphrase, so that the different containers can 
-           interact together. Default SSH key is ~/.ssh/id_rsa
+        1. Generate a SSH key without passphrase, so that the different containers can 
+           interact together.
         2. Download IBM Platform MPI Community Edition installer
         3. Build the base Docker image used by this tutorial
-
-        ${bold}--ssh-key${normal} FILE
-                Specify the SSH key to use. Default is ~/.ssh/id_rsa
-                The specified SSH key must not have a passphrase.
 
         ${bold}-h --help${normal}
                 Display this message and exit.
 
 ${bold}ENVIRONMENT${normal}
         You can specify path to executables used by this script
-        via environment variables if not in PATH: ${bold}SED${normal}, ${bold}DOCKER${normal}
-DOCKER=${DOCKER:-docker}
+        via environment variables if not in PATH:
 
+        ${bold}SED${normal}
+        ${bold}DOCKER${normal}
+        ${bold}SSH_KEYGEN${normal}
 EOF
 }
 
@@ -43,26 +42,17 @@ parse_cli() {
                 help_message
                 exit 0
                 ;;
-            --ssh-key)
-                shift
-                SSH_KEY="$1"
-                ;;
         esac
         shift
     done
 }
 
-prepare_ssh_key() {
-    local ssh_key="$1"
-    if "$SED" -n '2p' "$ssh_key" | grep -q "^Proc-Type.*ENCRYPTED" ;then
-        echo "Error: specified SSH key ($ssh_key) has a passphrase." >&2
-        echo "Please use --ssh-key option to provide one without passphrase." >&2
-        echo "Hint: to create one: ssh-keygen -t rsa -N '' -f ~/.ssh/docker-mpi" >&2
-        return 1
+generate_ssh_key() {
+    if ! [ -f base-image/files/id_rsa ] ; then
+        "$SSH_KEYGEN" -t rsa -N '' -f base-image/files/id_rsa
     fi
-    echo "Copying SSH key in ./base-image/files/ $ssh_key"
-    install -m 400 "$ssh_key" base-image/files/id_rsa
-    install -m 400 "${ssh_key}.pub" base-image/files/id_rsa.pub
+    chmod 400 base-image/files/id_rsa
+    chmod 400 base-image/files/id_rsa.pub
 }
 
 download_platform_mpi() {
@@ -86,8 +76,5 @@ SSH_KEY=~/.ssh/id_rsa
 
 parse_cli $@
 download_platform_mpi
-if ! prepare_ssh_key "$SSH_KEY" ; then
-    echo "Abort."
-    exit 1
-fi
+generate_ssh_key
 build_docker_image
