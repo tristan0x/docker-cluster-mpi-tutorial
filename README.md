@@ -1,28 +1,31 @@
 # Docker MPI tutorial
 
 This repository provides a tutorial demonstrating how to create a cluster
-of Docker containers on your computer and execute an MPI job on it.
+of Docker containers on your computer and execute MPI jobs on it.
 
 ## Requirements
 
 * docker
 * wget
-* openssh-client (ssh-keygen executable is used)
+* openssh-client (`ssh-keygen` executable is used)
 
 ## Installation
 
 ### Prepare the working copy
 
-Execute the bootstrap script: `./bootstrap`
+Execute the script: `./bootstrap`
 
+Please execute `./bootstrap --help` for a description of what the script is doing.
 
 ### Spawn the containers
 
 Execute the script: `./cluster-setup N`
 
-where N is the cluster size.
-This scripts will start the containers and generate a `cluster-mpirun` script that can be
-used to execute job on this cluster.
+where `N` is the cluster size.
+This script will start the containers and generate a `cluster-mpirun` script that can be
+used to execute jobd on this cluster.
+
+Please execute `./cluster-setup --help` for a description of what the script is doing.
 
 For instance:
 
@@ -56,7 +59,12 @@ e6c71cd05052        centos7:mpi         "/usr/sbin/sshd -D"      About a minute 
 Let's run one of the samples provided by IBM Platform MPI Community Edition:
 
 ```
-./cluster-mpirun /opt/ibm/platform_mpi/help/hello_world
+bash $ ./cluster-mpirun /opt/ibm/platform_mpi/help/hello_world
+$ exec docker run --rm -ti --entrypoint /usr/bin/mpirun.entrypoint --env MPIRUN_NP=4 --env MPIRUN_HOSTLIST=172.17.0.3,172.17.0.4,172.17.0.5,172.17.0.6 centos7:mpi /opt/ibm/platform_mpi/help/hello_world
+Hello world! I'm 1 of 4 on 172.17.0.4
+Hello world! I'm 3 of 4 on 172.17.0.6
+Hello world! I'm 2 of 4 on 172.17.0.5
+Hello world! I'm 0 of 4 on 172.17.0.3
 ```
 
 ### Terminate the cluster
