@@ -63,6 +63,17 @@ Let's run one of the samples provided by IBM Platform MPI Community Edition:
 
 Execute the generate `cluster-teardown` script to get rid of Docker containers.
 
+```
+bash $ ./cluster-teardown
+$ docker rm -f docker-mpi-01
+docker-mpi-01
+$ docker rm -f docker-mpi-02
+docker-mpi-02
+$ docker rm -f docker-mpi-03
+docker-mpi-03
+$ docker rm -f docker-mpi-04
+docker-mpi-04
+```
 ## Links
 
 * https://www.ibm.com/developerworks/community/blogs/W8932c25e7e86_409c_ab4c_b1deebf711ff/entry/developing_message_passing_application_mpi_with_docker?lang=en
