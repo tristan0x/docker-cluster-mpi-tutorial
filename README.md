@@ -57,6 +57,10 @@ Let's run one of the samples provided by IBM Platform MPI Community Edition:
 ./cluster-mpirun /opt/ibm/platform_mpi/help/hello_world
 ```
 
+### Terminate the cluster
+
+Execute the generate `cluster-teardown` script to get rid of Docker containers.
+
 ## Links
 
 * https://www.ibm.com/developerworks/community/blogs/W8932c25e7e86_409c_ab4c_b1deebf711ff/entry/developing_message_passing_application_mpi_with_docker?lang=en
