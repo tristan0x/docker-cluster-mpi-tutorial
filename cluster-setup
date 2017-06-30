@@ -1,6 +1,5 @@
 #!/bin/sh -e
 
-SED=${SED:-sed}
 DOCKER=${DOCKER:-docker}
 
 setup_cluster() {
@@ -85,6 +84,10 @@ ${bold}DESCRIPTION${normal}
 
         ${bold}-h --help${normal}
                 Display this message and exit.
+
+${bold}ENVIRONMENT${normal}
+        You can specify path to executables used by this script
+        via environment variables if not in PATH: ${bold}DOCKER${normal}
 EOF
 }
 

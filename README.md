@@ -1,7 +1,7 @@
 # Docker MPI tutorial
 
-This repository provides a tutorial that demonstrate how to create a containers cluster
-on your computer and run an MPI job on it
+This repository provides a tutorial demonstrating how to create a cluster
+of Docker containers on your computer and execute an MPI job on it.
 
 ## Requirements
 
