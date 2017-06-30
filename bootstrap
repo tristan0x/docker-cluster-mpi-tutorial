@@ -58,7 +58,8 @@ parse_cli() {
 
 generate_ssh_key() {
     if ! [ -f base-image/files/id_rsa ] ; then
-        cmd "$SSH_KEYGEN" -t rsa -N '' -f base-image/files/id_rsa
+        echo "$SSH_KEYGEN" -t rsa -N "''" -f base-image/files/id_rsa
+        "$SSH_KEYGEN" -t rsa -N '' -f base-image/files/id_rsa
     fi
     cmd chmod 400 base-image/files/id_rsa
     cmd chmod 400 base-image/files/id_rsa.pub
